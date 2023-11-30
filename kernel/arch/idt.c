@@ -13,41 +13,11 @@
 #include <stdint.h>
 #include <tool.h>
 
-static struct idt_desc IDT[IDT_SIZE] __attribute__((aligned(16)));
-struct idt_ptr IDT_POINT = { .limit = sizeof(IDT) - 1, .base = (uint64_t)IDT };
-
-const char *exception_names[] = { "Деление на ноль",
-	                              "Отладка",
-	                              "NMI",
-	                              "Точка останова",
-	                              "Переполнение",
-	                              "Выход за границы",
-	                              "Недопустимая операция",
-	                              "Устройство недоступно",
-	                              "Двойное исключение",
-	                              NO_NAME,
-	                              "Недопустимый TSS",
-	                              "Сегмент не присутствует",
-	                              "Ошибка сегмента стека",
-	                              "Общая защитная ошибка",
-	                              "Ошибка страницы",
-	                              NO_NAME,
-	                              "x87 исключение",
-	                              "Проверка выравнивания",
-	                              "Ошибка машины",
-	                              "SIMD исключение",
-	                              "Виртуализация",
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              NO_NAME,
-	                              "Безопасность" };
+static struct idt_ptr idt_ptr;
+static idt_entry_t idt[256];
 
 void exception_handler(struct frame state) {
+	asm volatile("cli");
 	LOG("\nПОЛУЧЕНО ИСКЛЮЧЕНИЕ: %s\n", exception_names[state.int_number]);
 
 	uintptr_t rsp = state.rsp;
@@ -64,7 +34,7 @@ void exception_handler(struct frame state) {
 	    "  R12=%x  R13=%x\n"
 	    "  R14=%x  R15=%x\n"
 	    "  RIP=%x  RFLAGS=%x\n"
-	    "  CS=%x SS=%x\n"
+	    "  CS=%x   SS=%x\n"
 	    "  ERR=%x  INT=%u",
 	    state.rax, state.rbx, state.rcx, state.rdx, state.rsi, state.rdi,
 	    state.rbp, state.rsp, state.r8, state.r9, state.r10, state.r11,
@@ -72,49 +42,38 @@ void exception_handler(struct frame state) {
 	    state.cs, state.ss, state.err, state.int_number);
 	LOG("stack_top = %x\n", stack_top);
 
-	asm volatile("cli; hlt");
+	asm volatile("hlt");
 }
 
-static void idt_desc_setup(struct idt_desc *desc, unsigned sel, uintptr_t offs,
-                           unsigned flags) {
-	desc->offs0 = offs & 0xfffful;
-	desc->offs1 = (offs >> 16) & 0xfffful;
-	desc->offs2 = (offs >> 32) & 0xfffffffful;
-
-	desc->sel = sel;
-	desc->flags = flags;
-	desc->_reserved = 0;
+void idt_set_gate(uint8_t num, interrupt_handler_t handler, uint16_t selector, uint8_t flags, int userspace) {
+	uintptr_t base = (uintptr_t)handler;
+	idt[num].base_low  = (base & 0xFFFF);
+	idt[num].base_mid  = (base >> 16) & 0xFFFF;
+	idt[num].base_high = (base >> 32) & 0xFFFFFFFF;
+	idt[num].selector = selector;
+	idt[num].zero = 0;
+	idt[num].pad = 0;
+	idt[num].flags = flags | (userspace ? 0x60 : 0);
 }
+
 
 static void idt_load( ) {
-	struct idt_ptr *ptr = &IDT_POINT;
-	asm volatile("lidt %0" : : "m"(*ptr));
+	asm volatile (
+		"lidt %0"
+		: : "m"(idt_ptr)
+	);
 }
 
-void idt_set_int(uint8_t vector, void *int_handler) {
-	idt_desc_setup(&IDT[vector], KERNEL_CS, (uintptr_t)int_handler,
-	               IDT_INTERRUPT_FLAGS);
+void idt_set_int(uint8_t vector, void *int_handler, char *name) {
+	idt_desc_setup(&IDT[vector], KERNEL_CS, (uintptr_t)int_handler, 0x8E);
 	idt_load( );
 }
 
 void idt_init( ) {
-	asm volatile("sti");
-
-	for (int i = 0; i != IDT_EXCEPTIONS; ++i) {
-		const uintptr_t handler = (uintptr_t)isr_stubs[i];
-
-		idt_desc_setup(&IDT[i], KERNEL_CS, handler, IDT_EXCEPTION_FLAGS);
-	}
-
-	for (int i = IDT_EXCEPTIONS; i != IDT_SIZE; ++i) {
-		const uintptr_t handler = (uintptr_t)isr_stubs[i];
-
-		idt_desc_setup(&IDT[i], KERNEL_CS, handler, IDT_INTERRUPT_FLAGS);
-	}
-
-	idt_desc_setup(&IDT[255], KERNEL_CS, (uintptr_t)isr_stubs[255],
-	               IDT_SPURIOUS_FLAGS);
-
-	idt_load( );
-	LOG("IDT инициализирован\n");
+	asm volatile("cli");
+	asm volatile (
+		"lidt %0"
+		: : "m"(idt_ptr)
+	);
+	LOG("IDT инициализирован 0x%x\n", IDT_INTERRUPT_FLAGS);
 }

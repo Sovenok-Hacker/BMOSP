@@ -2,25 +2,6 @@
 
 #define NO_NAME "Не задано название"
 
-#define KERNEL_CS 0x08
-#define KERNEL_DS 0x10
-
-#define IDT_SIZE 256
-#define IDT_EXCEPTIONS 32
-
-#define IDT_DPL(x) (((unsigned)(x)&0x3u) << 13)
-#define IDT_KERNEL IDT_DPL(0)
-
-#define IDT_TYPE(x) (((unsigned)(x)&0xfu) << 8)
-#define IDT_INT_GATE IDT_TYPE(0xeu)
-#define IDT_TRP_FATE IDT_TYPE(0xfu)
-
-#define IDT_PRESENT (1u << 15)
-
-#define IDT_EXCEPTION_FLAGS (IDT_KERNEL | IDT_INT_GATE | IDT_PRESENT)
-#define IDT_INTERRUPT_FLAGS (IDT_KERNEL | IDT_INT_GATE | IDT_PRESENT)
-#define IDT_SPURIOUS_FLAGS (IDT_KERNEL | IDT_INT_GATE | IDT_PRESENT)
-
 struct frame {
 	uint64_t rbp;
 	uint64_t rbx;
@@ -49,24 +30,102 @@ struct frame {
 typedef void (*exception_handler_t)(void);
 typedef void (*interrupt_handler_t)(void);
 
-struct idt_desc {
-	uint16_t offs0;
-	uint16_t sel;
-	uint16_t flags;
-	uint16_t offs1;
-	uint32_t offs2;
-	uint32_t _reserved;
-} __attribute__((packed));
+typedef struct {
+	uint16_t base_low;
+	uint16_t selector;
+
+	uint8_t zero;
+	uint8_t flags;
+
+	uint16_t base_mid;
+	uint32_t base_high;
+	uint32_t pad;
+} __attribute__((packed)) idt_entry_t;
 
 struct idt_ptr {
 	uint16_t limit;
 	uint64_t base;
 } __attribute__((packed));
 
-struct int_desc {
-	interrupt_handler_t handler;
-	int busy;
-};
-
 typedef void (*int_entry_t)(void);
 extern int_entry_t isr_stubs[];
+
+static const char *exception_names[] = { "Деление на ноль",
+	                              "Отладка",
+	                              "NMI",
+	                              "Точка останова",
+	                              "Переполнение",
+	                              "Выход за границы",
+	                              "Недопустимая операция",
+	                              "Устройство недоступно",
+	                              "Двойное исключение",
+	                              NO_NAME,
+	                              "Недопустимый TSS",
+	                              "Сегмент не присутствует",
+	                              "Ошибка сегмента стека",
+	                              "Общая защитная ошибка",
+	                              "Ошибка страницы",
+	                              NO_NAME,
+	                              "x87 исключение",
+	                              "Проверка выравнивания",
+	                              "Ошибка машины",
+	                              "SIMD исключение",
+	                              "Ошибка виртуализации",
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              NO_NAME,
+	                              "Ошибка безопасности" };
+extern struct regs * _isr0(struct regs*);
+extern struct regs * _isr1(struct regs*);
+extern struct regs * _isr2(struct regs*);
+extern struct regs * _isr3(struct regs*);
+extern struct regs * _isr4(struct regs*);
+extern struct regs * _isr5(struct regs*);
+extern struct regs * _isr6(struct regs*);
+extern struct regs * _isr7(struct regs*);
+extern struct regs * _isr8(struct regs*);
+extern struct regs * _isr9(struct regs*);
+extern struct regs * _isr10(struct regs*);
+extern struct regs * _isr11(struct regs*);
+extern struct regs * _isr12(struct regs*);
+extern struct regs * _isr13(struct regs*);
+extern struct regs * _isr14(struct regs*);
+extern struct regs * _isr15(struct regs*);
+extern struct regs * _isr16(struct regs*);
+extern struct regs * _isr17(struct regs*);
+extern struct regs * _isr18(struct regs*);
+extern struct regs * _isr19(struct regs*);
+extern struct regs * _isr20(struct regs*);
+extern struct regs * _isr21(struct regs*);
+extern struct regs * _isr22(struct regs*);
+extern struct regs * _isr23(struct regs*);
+extern struct regs * _isr24(struct regs*);
+extern struct regs * _isr25(struct regs*);
+extern struct regs * _isr26(struct regs*);
+extern struct regs * _isr27(struct regs*);
+extern struct regs * _isr28(struct regs*);
+extern struct regs * _isr29(struct regs*);
+extern struct regs * _isr30(struct regs*);
+extern struct regs * _isr31(struct regs*);
+extern struct regs * _irq0(struct regs*);
+extern struct regs * _irq1(struct regs*);
+extern struct regs * _irq2(struct regs*);
+extern struct regs * _irq3(struct regs*);
+extern struct regs * _irq4(struct regs*);
+extern struct regs * _irq5(struct regs*);
+extern struct regs * _irq6(struct regs*);
+extern struct regs * _irq7(struct regs*);
+extern struct regs * _irq8(struct regs*);
+extern struct regs * _irq9(struct regs*);
+extern struct regs * _irq10(struct regs*);
+extern struct regs * _irq11(struct regs*);
+extern struct regs * _irq12(struct regs*);
+extern struct regs * _irq13(struct regs*);
+extern struct regs * _irq14(struct regs*);
+extern struct regs * _irq15(struct regs*);
+extern struct regs * _isr123(struct regs*);

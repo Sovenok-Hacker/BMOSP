@@ -31,10 +31,13 @@ void _start( ) {
 	fb_printf("\t\t\t\t *** Дата сборки: %s %s ***\n", __DATE__, __TIME__);
 	fb_set_text_color(0x00D000);
 
-	mod_init( );
-	// pit_init( );
+	pit_init( );
 
-	mod_list_show( );
+	int x = 0 / 0;
+
+	// mod_init( );
+
+	// mod_list_show( );
 
 	fb_set_text_color(0x00FF00);
 	LOG("Готово! Для выхода из симуляции удерживайте: ESCAPE\n");
