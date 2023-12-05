@@ -16,7 +16,7 @@ void arch_init( );
 void cpu_init( );
 void gdt_init( );
 void idt_init( );
-void idt_set_int(uint8_t vector, void *int_handler);
+void idt_set_int(uint8_t vector, void *int_handler, char *name);
 uint64_t arch_get_tick_b( );
 uint64_t arch_get_tick_l( );
 uint64_t arch_get_tick( );

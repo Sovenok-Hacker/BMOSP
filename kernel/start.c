@@ -33,11 +33,9 @@ void _start( ) {
 
 	pit_init( );
 
-	int x = 0 / 0;
+	mod_init( );
 
-	// mod_init( );
-
-	// mod_list_show( );
+	mod_list_show( );
 
 	fb_set_text_color(0x00FF00);
 	LOG("Готово! Для выхода из симуляции удерживайте: ESCAPE\n");

@@ -45,35 +45,29 @@ void exception_handler(struct frame state) {
 	asm volatile("hlt");
 }
 
-void idt_set_gate(uint8_t num, interrupt_handler_t handler, uint16_t selector, uint8_t flags, int userspace) {
+void idt_set_gate(uint8_t num, interrupt_handler_t handler, uint16_t selector,
+                  uint8_t flags) {
 	uintptr_t base = (uintptr_t)handler;
-	idt[num].base_low  = (base & 0xFFFF);
-	idt[num].base_mid  = (base >> 16) & 0xFFFF;
+	idt[num].base_low = (base & 0xFFFF);
+	idt[num].base_mid = (base >> 16) & 0xFFFF;
 	idt[num].base_high = (base >> 32) & 0xFFFFFFFF;
 	idt[num].selector = selector;
 	idt[num].zero = 0;
 	idt[num].pad = 0;
-	idt[num].flags = flags | (userspace ? 0x60 : 0);
+	idt[num].flags = flags | 0; // 0x60 для режима пользователя (RING3)
 }
 
-
 static void idt_load( ) {
-	asm volatile (
-		"lidt %0"
-		: : "m"(idt_ptr)
-	);
+	asm volatile("lidt %0" : : "m"(idt_ptr));
 }
 
 void idt_set_int(uint8_t vector, void *int_handler, char *name) {
-	idt_desc_setup(&IDT[vector], KERNEL_CS, (uintptr_t)int_handler, 0x8E);
+	idt_set_gate(&idt[vector], 0x08, (uintptr_t)int_handler, 0x8E);
 	idt_load( );
 }
 
 void idt_init( ) {
 	asm volatile("cli");
-	asm volatile (
-		"lidt %0"
-		: : "m"(idt_ptr)
-	);
-	LOG("IDT инициализирован 0x%x\n", IDT_INTERRUPT_FLAGS);
+	asm volatile("lidt %0" : : "m"(idt_ptr));
+	LOG("IDT инициализирован 0x%x\n", 0x08);
 }

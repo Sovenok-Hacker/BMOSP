@@ -26,7 +26,7 @@ void pit_set_interval(int hz) {
 }
 
 void pit_init( ) {
-	idt_set_int(32, isr_generic);
+	idt_set_int(32, isr_generic, "PIT");
 	pit_set_interval(100);
 	asm volatile("sti");
 }
